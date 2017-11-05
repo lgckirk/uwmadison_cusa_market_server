@@ -28,7 +28,7 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
 ## ------ MarketExecute接口 ------
 
-* <b>所有请求附带数据都必须有*Action*这个参数来确定请求的目的，根据Action值的不同需附带其他信息</b>
+* **所有请求附带数据都必须有*Action*这个参数来确定请求的目的，根据Action值的不同需附带其他信息**
 
 * 所有Action的返回json均会带有**ErrorCode**和**ErrorMessage**这两个参数，ErrorCode == 1 代表一切正常，客户端需验证这个code，如果不是1要做对应处理
 
@@ -38,14 +38,15 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 1. GetProductsByType （查找某一类的商品）
 
     - 请求参数： TypeId (int) 商品的类别代码，以下是TypeId允许的值：
+            
             1 -> 其他
             2 -> 家具
             3 -> 电子产品
             4 -> 学术
             5 -> 衣服
             6 -> 租房
-	    7 -> 交通
-	    8 -> 化妆
+	    	7 -> 交通
+	    	8 -> 化妆
 
     - 返回参数： ErrorCode (int), ErrorMessage (string), Products (array, 返回数据，可以是空的)
 
@@ -61,17 +62,16 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
                     DateExpire (string)
                     ProductStatus (不用管这个)
 
-
 2. GetProductsByUserId （查找某一用户的商品）
 
     - 请求参数： UserId (int) 用户的唯一标识，来自于LoginExecute接口的返回
 
     - 返回参数： ErrorCode (int), ErrorMessage (string), Products (array, 参数见上文)
 
-
 3. PostProduct （发布商品）
 
     - 请求参数：
+            
             - 必须有：
                 ProductOwner (int) 商品所有者的UserId
                 ProductName (string) 商品的名称
@@ -82,8 +82,7 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
                 ProductDescription （string) 商品描述
                 ProductPrice (int) 商品价格, 对于住房类商品，价格指的是一个月租金
                                 (注意价格应该做成可选的而不是强制要求）
-		ContactName, ContactEmail, ContactPhone, ContactWechat (string, optional) 商品的联系人信息
-
+				ContactName, ContactEmail, ContactPhone, ContactWechat (string, optional) 商品的联系人信息
                 DateExpire (string) 商品下架日期，日期格式：
                             带时分秒 -> YYYY-MM-DD HH:mm:SS
                             不带时分秒 -> YYYY-MM-DD 或 YYYY/MM/DD
@@ -91,13 +90,11 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
     - 返回参数： ErrorCode, ErrorMessage, ProductId (int, 该产品的Id) 
 
-
 4. EndListing （下架商品）
 
     - 请求参数： ProductId (int) 商品Id
 
     - 返回参数： ErrorCode, ErrorMessage
-
 
 5. PostProductImages （发布商品图片）
 
@@ -106,8 +103,6 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
     - 图片上传的form name是"ProductImage" (没有s)
 
     - 返回参数： ErrorCode, ErrorMessage
-
-
 
 6. GetProductImages （获取商品url）
 
