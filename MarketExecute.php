@@ -95,6 +95,10 @@ function FetchProductImages($ProductId) {
         $DB->Query("DELETE FROM ProductImages WHERE ProductImageId = ".$ImageId);
         return FALSE;
     }
+    # no matter what, we clear out cache
+    finally {
+        unlink($TmpPath);
+    }
 
     return TRUE;
 }
