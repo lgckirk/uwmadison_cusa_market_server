@@ -57,63 +57,69 @@ function FetchProductImages($ProductId) {
 
     # TODO: add a check for image size.
 
-    # make product image folder (if there is one, use that one)
-    $Path = "./resources/images/".$ProductId."/";
-    if (!file_exists($Path)) {
-        mkdir($Path);
+    # store the image as tmp file
+    $TmpPath = "./tmp/";
+    $FileSysIte = new FilesystemIterator($TmpPath, FilesystemIterator::SKIP_DOTS);
+
+    $ImageExtension = pathinfo($_FILES["ProductImage"]["name"], PATHINFO_EXTENSION);
+    $TmpPath .= iterator_count($FileSysIte).".".$ImageExtension;
+    
+    if (!move_uploaded_file($_FILES["ProductImage"]["tmp_name"], $TmpPath)) {
+        return FALSE;
     }
 
-    # figure out name of file
-    $ImageName = (string)ProductImageCount($ProductId);
-    $ImageName .= ".".pathinfo($_FILES["ProductImage"]["name"], PATHINFO_EXTENSION);
-    $Path .= $ImageName;
+    # update database
+    $DB = new Database();
+    $DB->MultiQuery("INSERT INTO ProductImages (ProductId, ImageExtension)"
+            ." VALUES(".$ProductId.", '".$ImageExtension."');"
+            ."SELECT LAST_INSERT_ID() AS Id;");
+    $ImageId = $DB->NextRow()["Id"];
 
-    # it should not be possible to have duplicate name
-    if (file_exists($Path)) {
-        throw new Exception("File: ".$Path." already exists!");
+    # upload the image onto S3
+    try
+    {
+        $Client = Aws\S3\S3Client::factory(array(
+           "region" => "us-east-2",
+           "signature" => "v4"
+        ));
+
+        $Client->putObject(array(
+            'Bucket' => "cusamnp",
+            'Key'    => "/resources/images/".$ProductId."/".$ImageId.".".$ImageExtension,
+            'Body'   => fopen($TmpPath, 'r+b')
+        ));
+    }
+    # if we fail, delete the record and bail out
+    catch (Exception $e)
+    {
+        $DB->Query("DELETE FROM ProductImages WHERE ProductImageId = ".$ImageId);
+        return FALSE;
     }
 
-    # save image files
-    return move_uploaded_file($_FILES["ProductImage"]["tmp_name"], $Path);
+    return TRUE;
 }
-
-/**
-* Get the number of images this product has on server.
-* @param int $ProductId ProductId.
-* @return number of images this product has.
-*/
-function ProductImageCount($ProductId) {
-    $Path = "./resources/images/".$ProductId."/";
-    if (file_exists($Path)) {
-        $FileSysIte = new FilesystemIterator($Path, FilesystemIterator::SKIP_DOTS);
-        return iterator_count($FileSysIte);
-    }
-    else {
-        return 0;
-    }
-}
-
 
 /**
 * Get absolute urls of this product's images.
-* @TODO: It is bad to hard code url like this, fix it later.
+* @TODO: Should use S3 pre-signed URL instead of accessing bucket directly.
 * @param int $ProductId ProductId.
 * @return An array of image urls.
 */
 function GetProductImageAbsoluteUrl($ProductId) {
-    if (!ProductImageCount($ProductId)) {
+    $DB = new Database();
+    $DB->Query("SELECT * FROM ProductImages WHERE ProductId = ".$ProductId);
+
+    if (!$DB->NumOfRows()) {
+        $DB->Close();
         return array();
     }
     else {
-        $FileNames = array_diff(scandir("./resources/images/".$ProductId."/"),
-                array('..', '.'));
+        while ($Row = $DB->NextRow()) {
+            $Ret[] = "https://s3.us-east-2.amazonaws.com/cusamnp/resources/images/"
+                    .$ProductId."/".$Row["ProductImageId"].".".$Row["ImageExtension"];
+        }
+        return $Ret;
     }
-    $Ret = array();
-    foreach ($FileNames as $Name) {
-        $Ret[] = "https://gaochangli.com/resources/images/"
-                .$ProductId."/".$Name;
-    }
-    return $Ret;
 }
 
 /*----------------------------------MAIN----------------------------------------*/
@@ -143,6 +149,7 @@ set_error_handler("DefaultErrorHandler");
 require("./Database.php");
 require("./Product.php");
 require("./ProductsExplorer.php");
+require('./vendor/autoload.php');
 
 # first we update product status (active -> expired)
 $ActivePro = ProductsExplorer::GetAllActiveProducts();

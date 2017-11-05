@@ -4,14 +4,13 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
 # Interface Documentation
 
-## 接口地址： 
-	https://gaochangli.com/MarketExecute.php
-        （这是和二手市场交互的入口）
-    https://gaochangli.com/LoginExecute.php
-         (这是login后换取UserId的入口)
+## 接口地址
 
- * 所有通向接口的HTTP request的method都必须使用**POST**，Content-type使用**application/x-www-form-urlencoded**.
- * 所有接口返回的数据都是json格式
+* https://gaochangli.com/MarketExecute.php （这是和二手市场交互的入口）
+* https://gaochangli.com/LoginExecute.php (这是login后换取UserId的入口)
+
+* 所有通向接口的HTTP request的method都必须使用**POST**，Content-type使用**application/x-www-form-urlencoded**.
+* 所有接口返回的数据都是json格式
 
 
 ## ------ LoginExecute接口 ------
@@ -19,7 +18,7 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 * 调用wx.login()后函数会返回一个code（详见API），需要把这个code发送至本接口换取openid，
     然后本接口会返回一个int格式的UserId， 客服端需storage本UserId，作为用户的唯一标识
 
-* **请求参数**： LoginCode (wx.login()函数返回的code)
+* 请求参数： LoginCode (wx.login()函数返回的code)
 
 * TODO: 登陆态维护：调用checkSession， 如果没问题就不用再login了
 
@@ -28,9 +27,9 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
 ## ------ MarketExecute接口 ------
 
-* **所有请求附带数据都必须有*Action*这个参数来确定请求的目的，根据Action值的不同需附带其他信息**
+* 所有请求附带数据都必须有*Action*这个参数来确定请求的目的，根据Action值的不同需附带其他信息
 
-* 所有Action的返回json均会带有**ErrorCode**和**ErrorMessage**这两个参数，ErrorCode == 1 代表一切正常，客户端需验证这个code，如果不是1要做对应处理
+* 所有Action的返回json均会带有*ErrorCode*和*ErrorMessage*这两个参数，ErrorCode == 1 代表一切正常，客户端需验证这个code，如果不是1要做对应处理
 
 
 ### 以下是Acion可能的值和他们对应的请求参数和返回json带有的参数

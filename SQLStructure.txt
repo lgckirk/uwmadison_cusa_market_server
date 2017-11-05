@@ -42,8 +42,9 @@ ProductContact
 
 
 ProductImages
+            ProductImageId INT(9) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             ProductId INT(9) UNSIGNED NOT NULL,
-            ImageUrl TEXT
+            ImageExtension VARCHAR(10)
 
 
 

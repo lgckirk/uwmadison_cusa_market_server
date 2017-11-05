@@ -3,13 +3,18 @@
 <body>
 
 <h1>DB Set UP, For testing purpose only!</h1>
+
+<p>注：因为程序构架改变的原因，不再提供reset DB的功能。访问此功能请使用GET请求:P=admin</p>
 <br>
     <form action="./SetUp.php" method="post">
         <p>Choose what you want to do: </p>
-        <input type="submit" value="Reset All Tables" name="submit"> <br>
-        <!-- <input type="submit" value="Reset All Images" name="submit"> <br> -->
         <input type="submit" value="Show Tables" name="submit"> <br>
-        <input type="submit" value="Show All Records" name="submit">
+        <input type="submit" value="Show All Records" name="submit"> <br>
+
+        <?PHP if (isset($_GET["P"]) && $_GET["P"] == "admin") { ?>
+            <input type="submit" value="Reset All Tables" name="submit"> <br>
+            <input type="submit" value="Reset Images FROM DB" name="submit"> <br>
+        <?PHP } ?>
     </form>
 <br>
 
@@ -40,15 +45,15 @@
                 $DB->Query("DROP TABLE Products;");
                 $DB->Query("DROP TABLE ProductContact;");
                 $DB->Query("DROP TABLE Users;");
+                $DB->Query("DROP TABLE ProductImages;");
                 Database::SetUp();
                 echo "------------ Complete ------------ <br>";
             }
 
-            # Reset All Images
-            if ($_POST["submit"] == "Reset All Images")
+            # Reset All Images from database
+            if ($_POST["submit"] == "Reset Images FROM DB")
             {
-                system("rm -rf ./resources/images/");
-                mkdir("./resources/images/");
+                $DB->Query("DELETE FROM ProductImages;");
                 echo "------------ Complete ------------ <br>";
             }
 
@@ -77,6 +82,16 @@
 
                 echo "---------- ProductContact ---------- <br>";
                 $DB->Query("SELECT * FROM ProductContact");
+                while ($Row = $DB->NextRow()) {
+                    foreach ($Row as $key => $val) {
+                        $val = is_null($val) ? "NULL" : $val;
+                        echo "# " . $key . " | " . $val . "<br>";
+                    }
+                    echo "<br>";
+                }
+
+                echo "---------- ProductImages ---------- <br>";
+                $DB->Query("SELECT * FROM ProductImages");
                 while ($Row = $DB->NextRow()) {
                     foreach ($Row as $key => $val) {
                         $val = is_null($val) ? "NULL" : $val;
