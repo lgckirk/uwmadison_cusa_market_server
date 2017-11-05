@@ -1,10 +1,10 @@
-# 关于
+# About
 
 This repository is the live version of the CUSAMNP. Files for testing purposes should **NOT** be present here.
 
 # Interface Documentation
 
-## 接口地址
+## Interface
 
 * https://gaochangli.com/MarketExecute.php （这是和二手市场交互的入口）
 * https://gaochangli.com/LoginExecute.php (这是login后换取UserId的入口)
@@ -13,7 +13,7 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 * 所有接口返回的数据都是json格式
 
 
-## ------ LoginExecute接口 ------
+## LoginExecute Interface
 
 * 调用wx.login()后函数会返回一个code（详见API），需要把这个code发送至本接口换取openid，
     然后本接口会返回一个int格式的UserId， 客服端需storage本UserId，作为用户的唯一标识
@@ -25,7 +25,7 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
 
 
-## ------ MarketExecute接口 ------
+## MarketExecute Interface
 
 * 所有请求附带数据都必须有*Action*这个参数来确定请求的目的，根据Action值的不同需附带其他信息
 
