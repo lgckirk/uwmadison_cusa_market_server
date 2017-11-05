@@ -1,0 +1,53 @@
+Users
+            UserId INT(7) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            OpenId VARCHAR(30) NOT NULL
+
+Products
+            ProductId INT(9) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            ProductName VARCHAR(60),
+
+			# not available for housing type
+            ProductCondition VARCHAR(60),
+
+			# INT or NULL, for housing, it’s the monthly cost
+            ProductPrice INT(6),
+
+            ProductDescription TEXT,
+            ProductType TINYINT(3),
+					    PTYPE_OTHER = 1;
+    					PTYPE_ACADEMIC = 2;
+    					PTYPE_DAILYESSENTIAL = 3;
+    					PTYPE_ELECTRONIC = 4;
+    					PTYPE_LARGEITEM = 5;
+    					PTYPE_HOUSING = 6;
+
+			# creator user id
+            ProductOwner INT(7) UNSIGNED NOT NULL,
+            DateCreated DATETIME,
+
+			# check this evertime DB is accessed and update Status accordingly
+            DateExpire DATETIME,
+            ProductStatus TINYINT(2)
+						PSTATUS_ACTIVE = 1;
+				 		PSTATUS_EXPIRED = 2;
+						PSTATUS_ENDED = 3;
+
+ProductContact
+            ProductId INT(9) UNSIGNED NOT NULL,
+            ContactName VARCHAR(30),
+            ContactPhone VARCHAR(20),
+            ContactEmail VARCHAR(40),
+            ContactWechat VARCHAR(40)
+
+
+
+ProductImages
+            ProductId INT(9) UNSIGNED NOT NULL,
+            ImageUrl TEXT
+
+
+
+
+// 以后需要一个Editors table储存管理员账号
+// 还需要一个FavoriteProducts table
+
