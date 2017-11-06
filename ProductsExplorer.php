@@ -13,7 +13,8 @@
         *       that bad thing has happended.
         * @param int $UserId UserId.
         * @param const $Status ProductStatus constant of which the products
-        *       to return should have (OPTIONAL, defaults to all products).
+        *       to return should have (OPTIONAL, defaults to only active products).
+        *       Pass in NULL to get products of all status.
         * @return An array of product ID.
         */
         public static function GetProductsByUserId($UserId, $Status = Product::PSTATUS_ACTIVE) {

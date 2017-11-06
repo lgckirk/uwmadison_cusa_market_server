@@ -187,8 +187,9 @@ else {
             $Products = ProductsExplorer::GetProductsByType($TypeId);
 
             foreach ($Products as $ProductId) {
-                $Product = new Product($ProductId);
-                $Array[] = $Product->ArrayForSerialize();
+                $Product = (new Product($ProductId))->ArrayForSerialize();
+                $Product["ProductImages"] = GetProductImageAbsoluteUrl($ProductId);
+                $Array[] = $Product;
             }
             echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "",
                     "Products" => $Array));
@@ -203,8 +204,9 @@ else {
             $Products = ProductsExplorer::GetProductsByUserId($UserId);
 
             foreach ($Products as $ProductId) {
-                $Product = new Product($ProductId);
-                $Array[] = $Product->ArrayForSerialize();
+                $Product = (new Product($ProductId))->ArrayForSerialize();
+                $Product["ProductImages"] = GetProductImageAbsoluteUrl($ProductId);
+                $Array[] = $Product;
             }
             echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "",
                     "Products" => $Array));
@@ -291,13 +293,15 @@ else {
 
             break;
 
+        # @deprecated
         case "GetProductImages":
             if (!CheckPostParam("ProductId")) {
                 return;
             }
             # form name for file should be "ProductImage"
             $Url = GetProductImageAbsoluteUrl(intval($_POST["ProductId"]));
-            echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "",
+            echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "Warning: this function is deprecated. "
+                    ."Retrieve image URLs directly from products information instead.",
                     "ProductImages" => $Url));
 
             break;

@@ -4,7 +4,7 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
 # Interface Documentation
 
-## Interface
+## Interface Overview
 
 * https://gaochangli.com/MarketExecute.php （这是和二手市场交互的入口）
 * https://gaochangli.com/LoginExecute.php (这是login后换取UserId的入口)
@@ -60,12 +60,14 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
                     DateCreated (string)
                     DateExpire (string)
                     ProductStatus (不用管这个)
+                    ProductContact (array, 包含ContactName, ContactPhone, ContactEmail, ContactWechat, 都可能是NULL)
+                    ProductImages (array, URLs)
 
 2. GetProductsByUserId （查找某一用户的商品）
 
     - 请求参数： UserId (int) 用户的唯一标识，来自于LoginExecute接口的返回
 
-    - 返回参数： ErrorCode (int), ErrorMessage (string), Products (array, 参数见上文)
+    - 返回参数： ErrorCode (int), ErrorMessage (string), Products (array, Product参数见"GetProductsByType")
 
 3. PostProduct （发布商品）
 
@@ -103,7 +105,7 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
     - 返回参数： ErrorCode, ErrorMessage
 
-6. GetProductImages （获取商品url）
+6. GetProductImages （获取商品url）  **# This function is deprecated, use GetProductsByType/GetProductsByUserId instead.**
 
     - 请求参数： ProductId (int) 商品Id
 
