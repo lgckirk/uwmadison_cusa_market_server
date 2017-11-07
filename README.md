@@ -6,8 +6,8 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
 ## Interface Overview
 
-* https://gaochangli.com/MarketExecute.php （这是和二手市场交互的入口）
-* https://gaochangli.com/LoginExecute.php (这是login后换取UserId的入口)
+* https://mnpserver.uwmadisoncusa.com/MarketExecute.php （这是和二手市场交互的入口）
+* https://mnpserver.uwmadisoncusa.com/LoginExecute.php (这是login后换取UserId的入口)
 
 * 所有通向接口的HTTP request的method都必须使用**POST**，Content-type使用**application/x-www-form-urlencoded**.
 * 所有接口返回的数据都是json格式
