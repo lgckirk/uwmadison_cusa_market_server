@@ -63,7 +63,7 @@ function FetchProductImages($ProductId) {
 
     $ImageExtension = pathinfo($_FILES["ProductImage"]["name"], PATHINFO_EXTENSION);
     $TmpPath .= iterator_count($FileSysIte).".".$ImageExtension;
-    
+
     if (!move_uploaded_file($_FILES["ProductImage"]["tmp_name"], $TmpPath)) {
         return FALSE;
     }
@@ -212,6 +212,7 @@ else {
                     "Products" => $Array));
             break;
 
+        # @deprecated
         case "PostProduct":
             # check for necessary param
             if (!CheckPostParam("ProductOwner") || !CheckPostParam("ProductName")
@@ -263,7 +264,9 @@ else {
             }
             $NewPro->ProductContact($ContactInfo);
 
-            echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "",
+            echo json_encode(array("ErrorCode" => OK,
+                    "ErrorMessage" => "Warning: this function is deprecated. ".
+                    "Use PostProductWithImage for product posting.",
                     "ProductId" => $NewPro->GetProductId()));
 
             break;
@@ -278,17 +281,84 @@ else {
 
             break;
 
+        # @deprecated
         case "PostProductImages":
             if (!CheckPostParam("ProductId")) {
                 return;
             }
             # form name for file should be "ProductImage"
             if (FetchProductImages(intval($_POST["ProductId"]))) {
-                echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => ""));
+                echo json_encode(array("ErrorCode" => OK,
+                    "ErrorMessage" => "Warning: this function is deprecated. ".
+                    "Use PostProductWithImage for product posting."));
             }
             else {
                 echo json_encode(array("ErrorCode" => ERROR_CANNOTGETIMAGE,
                         "ErrorMessage" => "Image upload has failed"));
+            }
+
+            break;
+
+        case "PostProductWithImage":
+            # check for necessary param
+            if (!CheckPostParam("ProductOwner") || !CheckPostParam("ProductName")
+                    || !CheckPostParam("ProductType"))
+            {
+                return;
+            }
+
+            # create new product and set basic information
+            # TODO: need to check input
+            $ProductOwner = intval($_POST["ProductOwner"]);
+            $ProductName = $_POST["ProductName"];
+            $ProductType = intval($_POST["ProductType"]);
+
+            $NewPro = Product::Create($ProductOwner);
+            $NewPro->ProductName($ProductName);
+            $NewPro->ProductType($ProductType);
+
+            # set optional information
+            if (isset($_POST["ProductCondition"])) {
+                $NewPro->ProductCondition($_POST["ProductCondition"]);
+            }
+            if (isset($_POST["ProductDescription"])) {
+                $NewPro->ProductDescription($_POST["ProductDescription"]);
+            }
+            if (isset($_POST["ProductPrice"])) {
+                $NewPro->ProductPrice($_POST["ProductPrice"]);
+            }
+
+            # set expire time
+            $Timestamp = isset($_POST["DateExpire"]) ?
+                    strtotime($_POST["DateExpire"]) : strtotime("+90 days");
+            $DateArr = array("Year" => date("Y", $Timestamp),
+                    "Month" => date("m", $Timestamp),
+                    "Day" => date("d", $Timestamp),
+                    "Hour" => date("H", $Timestamp),
+                    "Minute" => date("i", $Timestamp),
+                    "Second" => date("s", $Timestamp));
+            $NewPro->DateExpire($DateArr);
+
+            # set contact information
+            $ContactInfo = array();
+            $ParamName = array("ContactName", "ContactPhone",
+                    "ContactEmail", "ContactWechat");
+            foreach ($ParamName as $Param) {
+                if (isset($_POST[$Param])) {
+                    $ContactInfo[$Param] = $_POST[$Param];
+                }
+            }
+            $NewPro->ProductContact($ContactInfo);
+
+            # post image
+            if (!FetchProductImages($NewPro->GetProductId())) {
+                echo json_encode(array("ErrorCode" => ERROR_CANNOTGETIMAGE,
+                        "ErrorMessage" => "Image upload has failed",
+                        "ProductId" => $NewPro->GetProductId()));
+            }
+            else {
+                echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "",
+                        "ProductId" => $NewPro->GetProductId()));
             }
 
             break;
@@ -314,3 +384,4 @@ else {
 }
 
 ?>
+

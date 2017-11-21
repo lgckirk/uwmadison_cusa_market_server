@@ -24,7 +24,6 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
 
 
-
 ## MarketExecute Interface
 
 * 所有请求附带数据都必须有*Action*这个参数来确定请求的目的，根据Action值的不同需附带其他信息
@@ -37,15 +36,15 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 1. GetProductsByType （查找某一类的商品）
 
     - 请求参数： TypeId (int) 商品的类别代码，以下是TypeId允许的值：
-            
+
             1 -> 其他
             2 -> 家具
             3 -> 电子产品
             4 -> 学术
             5 -> 衣服
             6 -> 租房
-	    	7 -> 交通
-	    	8 -> 化妆
+            7 -> 交通
+            8 -> 化妆
 
     - 返回参数： ErrorCode (int), ErrorMessage (string), Products (array, 返回数据，可以是空的)
 
@@ -69,10 +68,10 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
     - 返回参数： ErrorCode (int), ErrorMessage (string), Products (array, Product参数见"GetProductsByType")
 
-3. PostProduct （发布商品）
+3. PostProductWithImage （发布商品/商品图片）
 
     - 请求参数：
-            
+
             - 必须有：
                 ProductOwner (int) 商品所有者的UserId
                 ProductName (string) 商品的名称
@@ -83,13 +82,15 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
                 ProductDescription （string) 商品描述
                 ProductPrice (int) 商品价格, 对于住房类商品，价格指的是一个月租金
                                 (注意价格应该做成可选的而不是强制要求）
-				ContactName, ContactEmail, ContactPhone, ContactWechat (string, optional) 商品的联系人信息
+                ContactName, ContactEmail, ContactPhone, ContactWechat (string, optional) 商品的联系人信息
                 DateExpire (string) 商品下架日期，日期格式：
                             带时分秒 -> YYYY-MM-DD HH:mm:SS
                             不带时分秒 -> YYYY-MM-DD 或 YYYY/MM/DD
                             如果不明确下架日期，默认为上架日期的90天后
 
-    - 返回参数： ErrorCode, ErrorMessage, ProductId (int, 该产品的Id) 
+    - 图片上传的form name是"ProductImage" (没有s)
+
+    - 返回参数： ErrorCode, ErrorMessage, ProductId (int, 该产品的Id)
 
 4. EndListing （下架商品）
 
@@ -97,7 +98,32 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
     - 返回参数： ErrorCode, ErrorMessage
 
-5. PostProductImages （发布商品图片）
+
+### Deprecated interface functionality
+
+* PostProduct （发布商品）
+
+    - 请求参数：
+
+            - 必须有：
+                ProductOwner (int) 商品所有者的UserId
+                ProductName (string) 商品的名称
+                ProductType (int) 商品的类别代码，代码允许的值见上文
+
+            - 选填：
+                ProductCondition (string) 商品状态
+                ProductDescription （string) 商品描述
+                ProductPrice (int) 商品价格, 对于住房类商品，价格指的是一个月租金
+                                (注意价格应该做成可选的而不是强制要求）
+                ContactName, ContactEmail, ContactPhone, ContactWechat (string, optional) 商品的联系人信息
+                DateExpire (string) 商品下架日期，日期格式：
+                            带时分秒 -> YYYY-MM-DD HH:mm:SS
+                            不带时分秒 -> YYYY-MM-DD 或 YYYY/MM/DD
+                            如果不明确下架日期，默认为上架日期的90天后
+
+    - 返回参数： ErrorCode, ErrorMessage, ProductId (int, 该产品的Id)
+
+* PostProductImages （发布商品图片）
 
     - 请求参数： ProductId (int) 商品Id
 
@@ -105,8 +131,9 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
     - 返回参数： ErrorCode, ErrorMessage
 
-6. GetProductImages （获取商品url）  **# This function is deprecated, use GetProductsByType/GetProductsByUserId instead.**
+* GetProductImages （获取商品url）
 
     - 请求参数： ProductId (int) 商品Id
 
     - 返回参数： ErrorCode, ErrorMessage 和 ProductImages (array，里面是照片的absolute url)
+
