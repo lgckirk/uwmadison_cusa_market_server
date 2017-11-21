@@ -289,8 +289,7 @@ else {
             # form name for file should be "ProductImage"
             if (FetchProductImages(intval($_POST["ProductId"]))) {
                 echo json_encode(array("ErrorCode" => OK,
-                    "ErrorMessage" => "Warning: this function is deprecated. ".
-                    "Use PostProductWithImage for product posting."));
+                    "ErrorMessage" => ""));
             }
             else {
                 echo json_encode(array("ErrorCode" => ERROR_CANNOTGETIMAGE,
@@ -370,8 +369,7 @@ else {
             }
             # form name for file should be "ProductImage"
             $Url = GetProductImageAbsoluteUrl(intval($_POST["ProductId"]));
-            echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "Warning: this function is deprecated. "
-                    ."Retrieve image URLs directly from products information instead.",
+            echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "",
                     "ProductImages" => $Url));
 
             break;

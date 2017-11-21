@@ -10,9 +10,8 @@
     {
         $Code = $_POST["LoginCode"];
 
-        #TODO: should just make these 2 environmental variables.
-        $AppId = "wx00beb80204764058";
-        $AppSec = "f16ef1d889f21d9d500452f5d954b960";
+        $AppId = $_SERVER["AppId"];
+        $AppSec = $_SERVER["AppSec"];
 
         $Url = "https://api.weixin.qq.com/sns/jscode2session?appid="
                 .$AppId."&secret=".$AppSec."&js_code="
