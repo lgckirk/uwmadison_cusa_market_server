@@ -4,12 +4,13 @@
 
 <h1>DB Set UP, For testing purpose only!</h1>
 
-<p>注：因为程序构架改变的原因，不再提供reset DB的功能。访问此功能请使用GET请求:P=admin</p>
+<p>Use P=admin to access reset DB function.</p>
 <br>
     <form action="./SetUp.php" method="post">
         <p>Choose what you want to do: </p>
         <input type="submit" value="Show Tables" name="submit"> <br>
         <input type="submit" value="Show All Records" name="submit"> <br>
+        <input type="submit" value="Add a product" name="submit"> <br>
 
         <?PHP if (isset($_GET["P"]) && $_GET["P"] == "admin") { ?>
             <input type="submit" value="Reset All Tables" name="submit"> <br>
@@ -99,6 +100,19 @@
                     }
                     echo "<br>";
                 }
+                echo "------------ Complete ------------ <br>";
+            }
+
+            # Add a product
+            if ($_POST["submit"] == "Add a product")
+            {
+                $SQL = "INSERT INTO Products (ProductOwner, DateCreated, ProductStatus) VALUES (1, NOW(), 1)";
+
+                echo "----------- SQL Query: ----------- <br>";
+                echo $SQL . " <br>";
+
+                $DB->Query($SQL);
+
                 echo "------------ Complete ------------ <br>";
             }
         }

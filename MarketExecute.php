@@ -84,7 +84,7 @@ function FetchProductImages($ProductId) {
         ));
 
         $Client->putObject(array(
-            'Bucket' => "cusamnp",
+            'Bucket' => "cusa-market-mnp",
             'Key'    => "/resources/images/".$ProductId."/".$ImageId.".".$ImageExtension,
             'Body'   => fopen($TmpPath, 'r+b')
         ));
@@ -119,7 +119,7 @@ function GetProductImageAbsoluteUrl($ProductId) {
     }
     else {
         while ($Row = $DB->NextRow()) {
-            $Ret[] = "https://s3.us-east-2.amazonaws.com/cusamnp/resources/images/"
+            $Ret[] = "https://s3.us-east-2.amazonaws.com/cusa-market-mnp/resources/images/"
                     .$ProductId."/".$Row["ProductImageId"].".".$Row["ImageExtension"];
         }
         return $Ret;
