@@ -172,6 +172,17 @@ if (!isset($_POST["Action"])) {
             "ErrorMessage" => "Action is not specified"));
 }
 else {
+    $StartId = -1;
+    $ListLength = 20;
+
+    if(isset($_POST["StartId"])){
+        $StartId = $_POST["StartId"];
+    }
+
+    if(isset($_POST["ListLength"])){
+        $ListLength = $_POST["ListLength"];
+    }
+
     switch ($_POST["Action"]) {
         case "GetAllProducts":
             echo json_encode(array("ErrorCode" => ERROR_ILLEGALOPERATION,
@@ -184,7 +195,7 @@ else {
             }
             $TypeId = $_POST["TypeId"];
             $Array = array();
-            $Products = ProductsExplorer::GetProductsByType($TypeId);
+            $Products = ProductsExplorer::GetProductsByType($TypeId, $StartId, $ListLength);
 
             foreach ($Products as $ProductId) {
                 $Product = (new Product($ProductId))->ArrayForSerialize();
@@ -201,7 +212,7 @@ else {
             }
             $UserId = intval($_POST["UserId"]);
             $Array = array();
-            $Products = ProductsExplorer::GetProductsByUserId($UserId);
+            $Products = ProductsExplorer::GetProductsByUserId($UserId, $StartId, $ListLength);
 
             foreach ($Products as $ProductId) {
                 $Product = (new Product($ProductId))->ArrayForSerialize();
