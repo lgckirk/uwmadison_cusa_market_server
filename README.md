@@ -35,16 +35,20 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
 1. GetProductsByType （查找某一类的商品）
 
-    - 请求参数： TypeId (int) 商品的类别代码，以下是TypeId允许的值：
+    - 请求参数： 
+        - TypeId (int) 商品的类别代码，以下是TypeId允许的值：
 
-            1 -> 其他
-            2 -> 家具
-            3 -> 电子产品
-            4 -> 学术
-            5 -> 衣服
-            6 -> 租房
-            7 -> 交通
-            8 -> 化妆
+                1 -> 其他
+                2 -> 家具
+                3 -> 电子产品
+                4 -> 学术
+                5 -> 衣服
+                6 -> 租房
+                7 -> 交通
+                8 -> 化妆
+        
+        - StartId(int) 选填，返回比该ID所对应商品早上架的商品。若不填或填入无效ID，则默认返回最新的商品。
+        - ListLength(int) 选填，返回指定长度的商品列表。若不填或填入无效长度，则默认返回所有商品。
 
     - 返回参数： ErrorCode (int), ErrorMessage (string), Products (array, 返回数据，可以是空的)
 
@@ -64,7 +68,10 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
 
 2. GetProductsByUserId （查找某一用户的商品）
 
-    - 请求参数： UserId (int) 用户的唯一标识，来自于LoginExecute接口的返回
+    - 请求参数： 
+        - UserId (int) 用户的唯一标识，来自于LoginExecute接口的返回
+        - StartId(int) 选填，返回比该ID所对应商品早上架的商品。若不填或填入无效ID，则默认返回最新的商品。
+        - ListLength(int) 选填，返回指定长度的商品列表。若不填或填入无效长度，则默认返回所有商品。
 
     - 返回参数： ErrorCode (int), ErrorMessage (string), Products (array, Product参数见"GetProductsByType")
 
