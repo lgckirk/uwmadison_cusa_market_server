@@ -130,8 +130,8 @@ class Product {
         $this->SetProductStatus(self::PSTATUS_ENDED);
     }
 
-/* @{ */
-
+/* @{
+ */
     /**
     * Get product Id
     * @return Product ID
