@@ -75,7 +75,6 @@
             $StaCode = Product::GetStatusCodeForDB(Product::PSTATUS_ACTIVE);
             $SQL = self::Pagination("SELECT ProductId FROM Products WHERE ProductType = " . $Code .
                 " AND ProductStatus = " . $StaCode, $StartId, $ListLength);
-
             $DB->Query($SQL);
             while ($Row = $DB->NextRow()) {
                 $Ret[] = $Row["ProductId"];
