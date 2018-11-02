@@ -28,7 +28,7 @@
             $DB = new Database();
 
             # check if user Id is valid
-            $DB->Query("SELECT * FROM Users WHERE UserId = " . $UserId);
+            $DB->Query("SELECT * FROM Users WHERE UserId = ".$UserId);
             if ($DB->NumOfRows() < 1) {
                 return array();
             }
@@ -75,6 +75,7 @@
             $StaCode = Product::GetStatusCodeForDB(Product::PSTATUS_ACTIVE);
             $SQL = self::Pagination("SELECT ProductId FROM Products WHERE ProductType = " . $Code .
                 " AND ProductStatus = " . $StaCode, $StartId, $ListLength);
+
             $DB->Query($SQL);
             while ($Row = $DB->NextRow()) {
                 $Ret[] = $Row["ProductId"];
@@ -96,6 +97,7 @@
             $DB = new Database();
             $DB->Query(self::Pagination("SELECT ProductId FROM Products WHERE ProductStatus = "
                 . $Code, $StartId, $ListLength));
+
             while ($Row = $DB->NextRow()) {
                 $Ret[] = $Row["ProductId"];
             }
