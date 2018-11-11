@@ -172,10 +172,21 @@ if (!isset($_POST["Action"])) {
             "ErrorMessage" => "Action is not specified"));
 }
 else {
+    # products query pagination offset and page size
+    $StartId = isset($_POST["StartId"]) ? $_POST["StartId"] : -1;
+    $ListLength = isset($_POST["ListLength"]) ? $_POST["ListLength"] : 20;
+
     switch ($_POST["Action"]) {
         case "GetAllProducts":
-            echo json_encode(array("ErrorCode" => ERROR_ILLEGALOPERATION,
-                    "ErrorMessage" => "GetAllProducts: unsupported operation"));
+            $Array = [];
+            $Products = ProductsExplorer::GetAllActiveProducts($StartId, $ListLength);
+            foreach ($Products as $ProductId) {
+                $Product = (new Product($ProductId))->ArrayForSerialize();
+                $Product["ProductImages"] = GetProductImageAbsoluteUrl($ProductId);
+                $Array[] = $Product;
+            }
+            echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "",
+                    "Products" => $Array));
             break;
 
         case "GetProductsByType":
@@ -184,7 +195,7 @@ else {
             }
             $TypeId = $_POST["TypeId"];
             $Array = array();
-            $Products = ProductsExplorer::GetProductsByType($TypeId);
+            $Products = ProductsExplorer::GetProductsByType($TypeId, $StartId, $ListLength);
 
             foreach ($Products as $ProductId) {
                 $Product = (new Product($ProductId))->ArrayForSerialize();
@@ -201,7 +212,7 @@ else {
             }
             $UserId = intval($_POST["UserId"]);
             $Array = array();
-            $Products = ProductsExplorer::GetProductsByUserId($UserId);
+            $Products = ProductsExplorer::GetProductsByUserId($UserId, $StartId, $ListLength);
 
             foreach ($Products as $ProductId) {
                 $Product = (new Product($ProductId))->ArrayForSerialize();
