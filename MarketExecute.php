@@ -29,6 +29,56 @@ function CheckPostParam($Param) {
     return TRUE;
 }
 
+
+function CheckImageParam($File){
+    if (!is_uploaded_file($_FILES[$File]['tmp_name']) ||
+        $_FILES[$File]["error"] != UPLOAD_ERR_OK)
+    {
+        $Msg = "File is not received";
+        if (is_uploaded_file($_FILES[$File]['tmp_name'])) {
+            $Msg .= " with a error number: ".$_FILES[$File]["error"];
+        }
+        throw new Exception($Msg);
+    }
+
+    # check if this image is acutally an image
+    if (getimagesize($_FILES[$File]["tmp_name"]) === FALSE) {
+        throw new Exception("File passed in is not a image");
+    }
+}
+
+$TmpFolder = "./tmp/";
+
+function GetPath($File){
+    global $TmpFolder;
+    $FileSysIte = new FilesystemIterator($TmpFolder, FilesystemIterator::SKIP_DOTS);
+
+    $ImageExtension = pathinfo($_FILES[$File]["name"], PATHINFO_EXTENSION);
+    $TmpPath = $TmpFolder.iterator_count($FileSysIte).".".$ImageExtension;
+
+    if (!move_uploaded_file($_FILES[$File]["tmp_name"], $TmpPath)) {
+        return FALSE;
+    }
+
+    return array(
+        "Extension" => $ImageExtension,
+        "TmpPath" => $TmpPath
+    );
+}
+
+function Upload($TmpPath, $Identifier){
+    $Client = Aws\S3\S3Client::factory(array(
+        "region" => "us-east-2",
+        "signature" => "v4"
+    ));
+
+    $Client->putObject(array(
+        'Bucket' => "cusa-market-mnp",
+        'Key'    => "/resources/images/$Identifier",
+        'Body'   => fopen($TmpPath, 'r+b')
+    ));
+}
+
 /**
 * Retrieve image files from HTTP request (type: multipart/form-data),
 *       and store them on server under directory:
@@ -40,33 +90,14 @@ function CheckPostParam($Param) {
 */
 function FetchProductImages($ProductId) {
     # check if files have been successfully uploaded
-    if (!is_uploaded_file($_FILES['ProductImage']['tmp_name']) ||
-            $_FILES["ProductImage"]["error"] != UPLOAD_ERR_OK)
-    {
-        $Msg = "File is not received";
-        if (is_uploaded_file($_FILES['ProductImage']['tmp_name'])) {
-            $Msg .= " with a error number: ".$_FILES["ProductImage"]["error"];
-        }
-        throw new Exception($Msg);
-    }
-
-    # check if this image is acutally an image
-    if (getimagesize($_FILES["ProductImage"]["tmp_name"]) === FALSE) {
-        throw new Exception("File passed in is not a image");
-    }
+    CheckImageParam("ProductImage");
 
     # TODO: add a check for image size.
 
     # store the image as tmp file
-    $TmpPath = "./tmp/";
-    $FileSysIte = new FilesystemIterator($TmpPath, FilesystemIterator::SKIP_DOTS);
-
-    $ImageExtension = pathinfo($_FILES["ProductImage"]["name"], PATHINFO_EXTENSION);
-    $TmpPath .= iterator_count($FileSysIte).".".$ImageExtension;
-
-    if (!move_uploaded_file($_FILES["ProductImage"]["tmp_name"], $TmpPath)) {
-        return FALSE;
-    }
+    $ImageInfo = GetPath("ProductImage");
+    $ImageExtension = $ImageInfo["Extension"];
+    $TmpPath = $ImageInfo["TmpPath"];
 
     # update database
     $DB = new Database();
@@ -78,16 +109,7 @@ function FetchProductImages($ProductId) {
     # upload the image onto S3
     try
     {
-        $Client = Aws\S3\S3Client::factory(array(
-           "region" => "us-east-2",
-           "signature" => "v4"
-        ));
-
-        $Client->putObject(array(
-            'Bucket' => "cusa-market-mnp",
-            'Key'    => "/resources/images/".$ProductId."/".$ImageId.".".$ImageExtension,
-            'Body'   => fopen($TmpPath, 'r+b')
-        ));
+        Upload($TmpPath, "$ProductId/$ImageId.$ImageExtension");
     }
     # if we fail, delete the record and bail out
     catch (Exception $e)
@@ -96,6 +118,43 @@ function FetchProductImages($ProductId) {
         return FALSE;
     }
     # no matter what, we clear out cache
+    finally {
+        unlink($TmpPath);
+    }
+
+    return TRUE;
+}
+
+/**
+* Retrieve image files from HTTP request (type: multipart/form-data),
+*       and store them on S3 under directory:
+*       ./resources/images/Contacts/[user id].png
+* @NOTE Original image will be overriden if multiple contact qr code is uploaded
+* @TODO: Check whether the uploaded image is a valid qr code
+* @TODO: img format conversion if incompatible
+* @Discussion: whether should record contact info in database
+* @param int $UserId UserId.
+* @return TRUE on success, FALSE otherwise.
+*/
+function FetchContactImage($UserId){
+    CheckImageParam("ContactImage");
+    # store the image as tmp file
+    $ImageInfo = GetPath("ContactImage");
+    $TmpPath = $ImageInfo["TmpPath"];
+    # Currently, whether a use has uploaded contact info is not recorded in database
+    # upload the image onto S3
+    try
+    {
+        # Regardless of the original file extension, we always use png
+        # might need format conversion if the original file is of some incompatible img format
+        Upload($TmpPath, "Contacts/$UserId.png");
+    }
+    # Bail out
+    catch (Exception $e)
+    {
+        return FALSE;
+    }
+        # no matter what, we clear out cache
     finally {
         unlink($TmpPath);
     }
@@ -308,7 +367,18 @@ else {
             }
 
             break;
-
+        case "PostUserContact":
+            if (!CheckPostParam("UserId")){
+                return;
+            }
+            if (FetchContactImage(intval($_POST["UserId"]))) {
+                echo json_encode(array("ErrorCode" => OK,
+                    "ErrorMessage" => ""));   
+            }else{
+                echo json_encode(array("ErrorCode" => ERROR_CANNOTGETIMAGE,
+                        "ErrorMessage" => "Image upload has failed"));
+            }
+            break;
         case "PostProductWithImage":
             # check for necessary param
             if (!CheckPostParam("ProductOwner") || !CheckPostParam("ProductName")
