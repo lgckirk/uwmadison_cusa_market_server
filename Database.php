@@ -39,7 +39,6 @@ class Database {
     public function Query($SQL) {
         $this->ClearResult();
         $Result = $this->DB->query($SQL);
-
         if ($Result === FALSE) {
             throw new Exception("Query: ".$SQL." not executed correctly.");
         }
@@ -49,6 +48,7 @@ class Database {
             }
         }
     }
+    public function GetLastId(){ return $this->DB->insert_id; }
 
     /**
     * Performs multi query.
@@ -126,7 +126,8 @@ class Database {
         $Tables = array();
         $Tables[] = "CREATE TABLE IF NOT EXISTS Users (
             UserId INT(7) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            OpenId VARCHAR(30) NOT NULL
+            OpenId VARCHAR(30) NOT NULL,
+            Contact TINYINT(2) DEFAULT 0
         );";
         $Tables[] = "CREATE TABLE IF NOT EXISTS Products (
             ProductId INT(9) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -138,8 +139,9 @@ class Database {
             ProductOwner INT(7) UNSIGNED NOT NULL,
             DateCreated DATETIME,
             DateExpire DATETIME,
-            ProductStatus TINYINT(2)
-        );";
+            ProductStatus TINYINT(2),
+            FULLTEXT(ProductName, ProductDescription) WITH PARSER ngram
+        )ENGINE=InnoDB DEFAULT CHARSET=utf8;" ;
         $Tables[] = "CREATE TABLE IF NOT EXISTS ProductContact (
             ProductId INT(9) UNSIGNED NOT NULL,
             ContactName VARCHAR(30),
@@ -150,7 +152,14 @@ class Database {
         $Tables[] = "CREATE TABLE IF NOT EXISTS ProductImages (
             ProductImageId INT(9) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             ProductId INT(9) UNSIGNED NOT NULL,
-            ImageExtension VARCHAR(10)
+            ImageExtension VARCHAR(10),
+            Width INT(9) UNSIGNED,
+            Height INT(9) UNSIGNED
+        );";
+
+        $Tables[] = "CREATE TABLE IF NOT EXISTS BannerImages (
+            BannerImageId INT(9) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            RankId INT(9) UNSIGNED NOT NULL
         );";
 
         # establish connection

@@ -1,4 +1,5 @@
 <?
+date_default_timezone_set('UTC');
 if ($_SERVER['REQUEST_METHOD'] === 'POST')
 {
   $file = '/tmp/sample-app.log';

@@ -2,7 +2,7 @@
 # abstraction of a market product
 # @See ProductImageFactory.php
 # @author: Gaochang Li
-
+date_default_timezone_set('UTC');
 class Product {
 
     # constants defining product type
@@ -128,6 +128,19 @@ class Product {
     */
     public function End() {
         $this->SetProductStatus(self::PSTATUS_ENDED);
+    }
+
+    public function Republish() {
+        $this->SetProductStatus(self::PSTATUS_ACTIVE);
+        $Timestamp = strtotime("+90 days");
+        $DateArr = array("Year" => date("Y", $Timestamp),
+                "Month" => date("m", $Timestamp),
+                "Day" => date("d", $Timestamp),
+                "Hour" => date("H", $Timestamp),
+                "Minute" => date("i", $Timestamp),
+                "Second" => date("s", $Timestamp));
+        $this->DateExpire($DateArr);
+        return 1;
     }
 
 /* @{ */

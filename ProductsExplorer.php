@@ -2,7 +2,7 @@
 
     # convenient class for accessing different products
     # @author: Gaochang Li
-
+date_default_timezone_set('UTC');
     final class ProductsExplorer
     {
 
@@ -26,6 +26,7 @@
                 $StartId = -1, $ListLength = -1)
         {
             $UserId = intval($UserId);
+            // echo $Status;
             $DB = new Database();
 
             # check if user Id is valid
@@ -34,22 +35,17 @@
                 return array();
             }
 
-            # if want all products
-            if (is_null($Status)) {
+            # if want all products or status code invalid
+            if ($Status != Product::PSTATUS_ACTIVE &&
+                $Status != Product::PSTATUS_EXPIRED &&
+                $Status != Product::PSTATUS_ENDED){
                 $SQL = "SELECT ProductId From Products WHERE ProductOwner = " . $UserId;
-            } else {
-                # check Status code validity
-                if ($Status != Product::PSTATUS_ACTIVE &&
-                    $Status != Product::PSTATUS_EXPIRED &&
-                    $Status != Product::PSTATUS_ENDED) {
-                    return array();
-                } else {
-                    $Code = Product::GetStatusCodeForDB($Status);
-                    $SQL = "SELECT ProductId From Products WHERE ProductOwner = "
-                        . $UserId . " AND ProductStatus = " . $Code;
-                }
             }
-
+            else {
+                $Code = Product::GetStatusCodeForDB($Status);
+                $SQL = "SELECT ProductId From Products WHERE ProductOwner = "
+                        . $UserId . " AND ProductStatus = " . $Code;
+            }
             # main work happens here
             $DB->Query(self::Pagination($SQL, $StartId, $ListLength));
             $Ret = array();
@@ -100,6 +96,22 @@
             $DB->Query(self::Pagination("SELECT ProductId FROM Products WHERE ProductStatus = "
                 . $Code, $StartId, $ListLength));
 
+            while ($Row = $DB->NextRow()) {
+                $Ret[] = $Row["ProductId"];
+            }
+            $DB->Close();
+            return $Ret;
+        }
+
+        public static function SearchProducts($Pat, $Offset = 0, $Type = -1, $ListLength = 20){
+            $DB = new Database();
+            $Code = Product::GetStatusCodeForDB(Product::PSTATUS_ACTIVE);
+            $TempQuery = "SELECT ProductId, MATCH (ProductName,ProductDescription) AGAINST ('$Pat' IN NATURAL LANGUAGE MODE) AS score FROM Products WHERE MATCH (ProductName,ProductDescription) AGAINST ('$Pat' IN NATURAL LANGUAGE MODE)>0 AND ProductStatus = $Code" ;
+            if ($Type != -1)  $TempQuery .= " AND ProductType = $Type";
+            $TempQuery .= " ORDER BY score DESC LIMIT $Offset, $ListLength";
+            $DB->Query($TempQuery);
+
+            $Ret = array();
             while ($Row = $DB->NextRow()) {
                 $Ret[] = $Row["ProductId"];
             }
