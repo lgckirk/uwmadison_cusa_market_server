@@ -5,7 +5,7 @@
 
     require("./Database.php");
     header("Content-type: application/json");
-
+    date_default_timezone_set('UTC');
     if (isset($_POST["LoginCode"]))
     {
         $Code = $_POST["LoginCode"];

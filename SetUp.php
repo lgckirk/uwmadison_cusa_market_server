@@ -21,7 +21,7 @@
 
     <?php
         require("./Database.php");
-
+        date_default_timezone_set('UTC');
         $DB = new Database();
 
         if (isset($_POST["submit"]))
@@ -36,7 +36,7 @@
 
                 $DB->Query("SHOW TABLES;");
                 while($Row = $DB->NextRow()) {
-                    echo "# Table Name | ".$Row["Tables_in_ebdb"]."<br>";
+                    echo "# Table Name | ".json_encode($Row)."<br>";
                 }
             }
 
@@ -47,6 +47,7 @@
                 $DB->Query("DROP TABLE ProductContact;");
                 $DB->Query("DROP TABLE Users;");
                 $DB->Query("DROP TABLE ProductImages;");
+                $DB->Query("DROP TABLE BannerImages;");
                 Database::SetUp();
                 echo "------------ Complete ------------ <br>";
             }

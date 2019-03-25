@@ -13,7 +13,8 @@
     # @author Gaochang Li
 
 /*-----------------------------LOCAL FUNCTIONS----------------------------------*/
-
+date_default_timezone_set('UTC');
+define("URL", "https://s3.us-east-2.amazonaws.com/cusa-market-mnp/resources/images");
 /**
 * Check if param is set in POST. Echo error json if not set.
 * @param string $Param Parameter name.
@@ -29,6 +30,56 @@ function CheckPostParam($Param) {
     return TRUE;
 }
 
+
+function CheckImageParam($File){
+    if (!is_uploaded_file($_FILES[$File]['tmp_name']) ||
+        $_FILES[$File]["error"] != UPLOAD_ERR_OK)
+    {
+        $Msg = "File is not received";
+        if (is_uploaded_file($_FILES[$File]['tmp_name'])) {
+            $Msg .= " with a error number: ".$_FILES[$File]["error"];
+        }
+        throw new Exception($Msg);
+    }
+
+    # check if this image is acutally an image
+    if (getimagesize($_FILES[$File]["tmp_name"]) === FALSE) {
+        throw new Exception("File passed in is not a image");
+    }
+}
+
+$TmpFolder = "./tmp/";
+
+function GetPath($File){
+    global $TmpFolder;
+    $FileSysIte = new FilesystemIterator($TmpFolder, FilesystemIterator::SKIP_DOTS);
+
+    $ImageExtension = pathinfo($_FILES[$File]["name"], PATHINFO_EXTENSION);
+    $TmpPath = $TmpFolder.iterator_count($FileSysIte).".".$ImageExtension;
+
+    if (!move_uploaded_file($_FILES[$File]["tmp_name"], $TmpPath)) {
+        return FALSE;
+    }
+
+    return array(
+        "Extension" => $ImageExtension,
+        "TmpPath" => $TmpPath
+    );
+}
+
+function Upload($TmpPath, $Identifier){
+    $Client = Aws\S3\S3Client::factory(array(
+        "region" => "us-east-2",
+        "signature" => "v4"
+    ));
+
+    $Client->putObject(array(
+        'Bucket' => "cusa-market-mnp",
+        'Key'    => "/resources/images/$Identifier",
+        'Body'   => fopen($TmpPath, 'r+b')
+    ));
+}
+
 /**
 * Retrieve image files from HTTP request (type: multipart/form-data),
 *       and store them on server under directory:
@@ -40,33 +91,14 @@ function CheckPostParam($Param) {
 */
 function FetchProductImages($ProductId) {
     # check if files have been successfully uploaded
-    if (!is_uploaded_file($_FILES['ProductImage']['tmp_name']) ||
-            $_FILES["ProductImage"]["error"] != UPLOAD_ERR_OK)
-    {
-        $Msg = "File is not received";
-        if (is_uploaded_file($_FILES['ProductImage']['tmp_name'])) {
-            $Msg .= " with a error number: ".$_FILES["ProductImage"]["error"];
-        }
-        throw new Exception($Msg);
-    }
-
-    # check if this image is acutally an image
-    if (getimagesize($_FILES["ProductImage"]["tmp_name"]) === FALSE) {
-        throw new Exception("File passed in is not a image");
-    }
+    CheckImageParam("ProductImage");
 
     # TODO: add a check for image size.
 
     # store the image as tmp file
-    $TmpPath = "./tmp/";
-    $FileSysIte = new FilesystemIterator($TmpPath, FilesystemIterator::SKIP_DOTS);
-
-    $ImageExtension = pathinfo($_FILES["ProductImage"]["name"], PATHINFO_EXTENSION);
-    $TmpPath .= iterator_count($FileSysIte).".".$ImageExtension;
-
-    if (!move_uploaded_file($_FILES["ProductImage"]["tmp_name"], $TmpPath)) {
-        return FALSE;
-    }
+    $ImageInfo = GetPath("ProductImage");
+    $ImageExtension = $ImageInfo["Extension"];
+    $TmpPath = $ImageInfo["TmpPath"];
 
     # update database
     $DB = new Database();
@@ -74,20 +106,13 @@ function FetchProductImages($ProductId) {
             ." VALUES(".$ProductId.", '".$ImageExtension."');"
             ."SELECT LAST_INSERT_ID() AS Id;");
     $ImageId = $DB->NextRow()["Id"];
-
     # upload the image onto S3
     try
     {
-        $Client = Aws\S3\S3Client::factory(array(
-           "region" => "us-east-2",
-           "signature" => "v4"
-        ));
-
-        $Client->putObject(array(
-            'Bucket' => "cusa-market-mnp",
-            'Key'    => "/resources/images/".$ProductId."/".$ImageId.".".$ImageExtension,
-            'Body'   => fopen($TmpPath, 'r+b')
-        ));
+        Upload($TmpPath, "$ProductId/$ImageId.$ImageExtension");
+        list($width, $height) = getimagesize(URL. "/$ProductId/$ImageId.$ImageExtension");
+        // echo json_encode(array("Width"=>$width, "Height"=>$height));
+        $DB->Query("UPDATE ProductImages SET Width = $width, Height = $height WHERE ProductImageId = $ImageId;");
     }
     # if we fail, delete the record and bail out
     catch (Exception $e)
@@ -96,6 +121,65 @@ function FetchProductImages($ProductId) {
         return FALSE;
     }
     # no matter what, we clear out cache
+    finally {
+        unlink($TmpPath);
+    }
+
+    return TRUE;
+}
+
+function FetchBannerImage(){
+    CheckImageParam("BannerImage");
+    $DB = new Database();
+    $DB->Query("INSERT INTO BannerImages (RankId) VALUES(100);");
+    $Id = $DB->GetLastId();
+    $ImageInfo = GetPath("BannerImage");
+    $TmpPath = $ImageInfo["TmpPath"];
+    try{
+        Upload($TmpPath, "BannerImages/$Id.png");
+    }
+    catch(Exception $e){
+        $DB->Query("DELETE FROM BannerImages WHERE BannerIMageID = $Id");
+        return FALSE;
+    }
+    finally{
+        unlink($TmpPath);
+    }
+    return TRUE;
+}
+
+/**
+* Retrieve image files from HTTP request (type: multipart/form-data),
+*       and store them on S3 under directory:
+*       ./resources/images/Contacts/[user id].png
+* @NOTE Original image will be overriden if multiple contact qr code is uploaded
+* @TODO: Check whether the uploaded image is a valid qr code
+* @TODO: img format conversion if incompatible
+* @Discussion: whether should record contact info in database
+* @param int $UserId UserId.
+* @return TRUE on success, FALSE otherwise.
+*/
+function FetchContactImage($UserId){
+    CheckImageParam("ContactImage");
+    $DB = new Database();
+    # store the image as tmp file
+    $ImageInfo = GetPath("ContactImage");
+    $TmpPath = $ImageInfo["TmpPath"];
+    # Currently, whether a use has uploaded contact info is not recorded in database
+    # upload the image onto S3
+    try
+    {
+        # Regardless of the original file extension, we always use png
+        # might need format conversion if the original file is of some incompatible img format
+        Upload($TmpPath, "Contacts/$UserId.png");
+        $DB->Query("UPDATE Users SET Contact = 1 WHERE UserId = $UserId;");
+    }
+    # Bail out
+    catch (Exception $e)
+    {
+        return FALSE;
+    }
+        # no matter what, we clear out cache
     finally {
         unlink($TmpPath);
     }
@@ -121,6 +205,21 @@ function GetProductImageAbsoluteUrl($ProductId) {
         while ($Row = $DB->NextRow()) {
             $Ret[] = "https://s3.us-east-2.amazonaws.com/cusa-market-mnp/resources/images/"
                     .$ProductId."/".$Row["ProductImageId"].".".$Row["ImageExtension"];
+        }
+        return $Ret;
+    }
+}
+
+function GetProductImageDims($ProductId){
+    $DB = new Database();
+    $DB->Query("SELECT * FROM ProductImages WHERE ProductId = ".$ProductId);
+    if (!$DB->NumOfRows()) {
+        $DB->Close();
+        return array();
+    }
+    else {
+        while ($Row = $DB->NextRow()) {
+            $Ret[] = array("Width"=> intval($Row['Width']), "Height"=> intval($Row['Height']));
         }
         return $Ret;
     }
@@ -154,7 +253,6 @@ require("./Database.php");
 require("./Product.php");
 require("./ProductsExplorer.php");
 require('./vendor/autoload.php');
-
 # first we update product status (active -> expired)
 $ActivePro = ProductsExplorer::GetAllActiveProducts();
 foreach ($ActivePro as $ProId) {
@@ -183,6 +281,7 @@ else {
             foreach ($Products as $ProductId) {
                 $Product = (new Product($ProductId))->ArrayForSerialize();
                 $Product["ProductImages"] = GetProductImageAbsoluteUrl($ProductId);
+                $Product["ProductDims"] = GetProductImageDims($ProductId);
                 $Array[] = $Product;
             }
             echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "",
@@ -200,6 +299,7 @@ else {
             foreach ($Products as $ProductId) {
                 $Product = (new Product($ProductId))->ArrayForSerialize();
                 $Product["ProductImages"] = GetProductImageAbsoluteUrl($ProductId);
+                $Product["ProductDims"] = GetProductImageDims($ProductId);
                 $Array[] = $Product;
             }
             echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "",
@@ -211,18 +311,43 @@ else {
                 return;
             }
             $UserId = intval($_POST["UserId"]);
+            if (CheckPostParam("Status")){
+                $Status = intval($_POST["Status"]);
+            }
+            else{
+                $Status = -1;
+            }
             $Array = array();
-            $Products = ProductsExplorer::GetProductsByUserId($UserId, $StartId, $ListLength);
-
+            $Products = ProductsExplorer::GetProductsByUserId($UserId, $Status, $StartId, $ListLength);
             foreach ($Products as $ProductId) {
                 $Product = (new Product($ProductId))->ArrayForSerialize();
                 $Product["ProductImages"] = GetProductImageAbsoluteUrl($ProductId);
+                $Product["ProductDims"] = GetProductImageDims($ProductId);
                 $Array[] = $Product;
             }
             echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "",
                     "Products" => $Array));
             break;
-
+        case "SearchProducts":
+            if (!isset($_POST["Pattern"])) {
+                echo json_encode(array("ErrorCode" => -1, "ErrorMessage" => "Please give pattern string"));
+                return;
+            }
+            $Pat = $_POST["Pattern"];
+            $Offset = 0;
+            if (isset($_POST["Offset"])) $Offset = intval($_POST["Offset"]);
+            $Type = -1;
+            $Array = array();
+            $Products = ProductsExplorer::SearchProducts($Pat, $Offset, $Type);
+            foreach ($Products as $ProductId) {
+                $Product = (new Product($ProductId))->ArrayForSerialize();
+                $Product["ProductImages"] = GetProductImageAbsoluteUrl($ProductId);
+                $Product["ProductDims"] = GetProductImageDims($ProductId);
+                $Array[] = $Product;
+            }
+            echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "",
+                    "Products" => $Array));
+            break;
         # @deprecated
         case "PostProduct":
             # check for necessary param
@@ -308,7 +433,18 @@ else {
             }
 
             break;
-
+        case "PostUserContact":
+            if (!CheckPostParam("UserId")){
+                return;
+            }
+            if (FetchContactImage(intval($_POST["UserId"]))) {
+                echo json_encode(array("ErrorCode" => OK,
+                    "ErrorMessage" => ""));   
+            }else{
+                echo json_encode(array("ErrorCode" => ERROR_CANNOTGETIMAGE,
+                        "ErrorMessage" => "Image upload has failed"));
+            }
+            break;
         case "PostProductWithImage":
             # check for necessary param
             if (!CheckPostParam("ProductOwner") || !CheckPostParam("ProductName")
@@ -372,7 +508,12 @@ else {
             }
 
             break;
-
+        case "Republish":
+            if (!CheckPostParam("ProductId")) return;
+            $Pro = new Product($_POST["ProductId"]);
+            $Pro->Republish();
+            echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "", "ProductId" => $Pro->GetProductId()));
+            break;
         # @deprecated
         case "GetProductImages":
             if (!CheckPostParam("ProductId")) {
@@ -384,7 +525,69 @@ else {
                     "ProductImages" => $Url));
 
             break;
-
+        case "ShowAllBannerImage":
+            $DB = new Database();
+            $DB->Query("SELECT * From BannerImages ORDER BY BannerImageId ASC");
+            $Ret = array();
+            while ($Row = $DB->NextRow()) {
+                $Ret[] = $Row;
+            }
+            $DB->Close();
+            echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "", 
+                    "BannerImages" => $Ret));
+            break;
+        case "DeleteBannerImageWithId":
+            if (!CheckPostParam("ImageId")) return;
+            $DB = new Database();
+            $DB->Query("DELETE FROM BannerImages WHERE BannerImageId=".$_POST["ImageId"]);
+            $DB->Close();
+            echo json_encode(array("ErrorCode"=>OK, "ErrorMessage" => ""));
+            break;
+        case "UploadBannerImage":
+            if (FetchBannerImage()) {
+                echo json_encode(array("ErrorCode" => OK,
+                    "ErrorMessage" => ""));
+            }
+            else {
+                echo json_encode(array("ErrorCode" => ERROR_CANNOTGETIMAGE,
+                        "ErrorMessage" => "Image upload has failed"));
+            }
+            break;
+        case "SetBannerImageOrder":
+            if (!CheckPostParam("ImageId")) return;
+            if (!CheckPostParam("RankId")) return;
+            $ImageId = json_decode($_POST["ImageId"]);
+            $RankId = json_decode($_POST["RankId"]);
+            if (count($ImageId)!=count($RankId)){
+                echo json_encode(array("ErrorCode"=>ERROR_PARAMNOTSET, "ErrorMessage"=>"Unmacthed Rank and Id"));
+                return;
+            }
+            $DB = new Database();
+            # update
+            for ($x=0;$x<count($ImageId);$x++){
+                $DB->Query("UPDATE BannerImages SET RankId =" . $RankId[$x] ." WHERE BannerImageId=" . $ImageId[$x]);
+            }
+            $DB->Close();
+            echo json_encode(array("ErrorCode"=>OK, "ErrorMessage" => ""));
+            break;
+        case "CheckContact":
+            if (!CheckPostParam("UserId")) return;
+            $DB = new Database();
+            $UserId = $_POST["UserId"];
+            $DB->Query("SELECT Contact FROM Users WHERE UserId=$UserId;");
+            $Contact = intval($DB->NextRow()["Contact"]);
+            $DB->Close();
+            echo json_encode(array("ErrorCode"=>OK, "ErrorMessage"=>"", "Contact"=>$Contact));
+            break;
+        case "GetImageInfo":
+            if (!CheckPostParam("ImageId")) return;
+            $DB = new Database();
+            $ImageId = $_POST["ImageId"];
+            $DB->Query("SELECT Width, Height FROM ProductImages WHERE ProductImageId = $ImageId;");
+            $Dim = $DB->NextRow();
+            $DB->Close();
+            echo json_encode(array("ErrorCode"=>OK, "ErrorMessage"=>"", "Width"=>$Dim['Width'], "Height"=>$Dim['Height']));
+            break;
         default:
             echo json_encode(array("ErrorCode" => ERROR_ILLEGALACTIONVALUE,
                     "ErrorMessage" => "Action: '".$_POST["Action"]."' is not valid"));

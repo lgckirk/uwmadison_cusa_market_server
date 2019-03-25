@@ -2,7 +2,7 @@
 
 This repository is the live version of the CUSAMNP. Files for testing purposes should **NOT** be present here.
 
-# Interface Documentation
+# Interface Documentation 
 
 ## Interface Overview
 
@@ -111,6 +111,24 @@ This repository is the live version of the CUSAMNP. Files for testing purposes s
         
     - 返回参数： ErrorCode (int), ErrorMessage (string), Products (array, Product参数见"GetProductsByType")
 
+6. PostUserContact
+    - 请求参数:
+        - UserId(int) 必填， 联系人的用户Id
+        - ContactImage 用户上传的qr code图片
+    - 返回参数: ErrorCode, ErrorMessage
+    - 关于GetUserContact: 直接访问以下形式的链接从s3直接获取
+      https://s3.us-east-2.amazonaws.com/cusa-market-mnp/resources/images/Contacts/[UserId].png
+      如果用户尚未上传任何联系方式的返回信息:
+      ```xml 
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Error>
+            <Code>NoSuchKey</Code>
+            <Message>The specified key does not exist.</Message>
+            <Key>resources/images/Contacts/2.png</Key>
+            <RequestId>512CB52A3785B198</RequestId>
+            <HostId>0zeJPkytdOEt5pHRah5PlmtbpvyawXWByF1WKwAajPBKA+GWbdesEos1OXDLIueMWLQgaoVFjkk=</HostId>
+        </Error>```xml
+（时间紧促，以后会改进的!!）
 ### Deprecated interface functionality
 
 * PostProduct （发布商品）
