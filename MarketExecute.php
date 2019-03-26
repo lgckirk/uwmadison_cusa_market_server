@@ -136,6 +136,7 @@ define("ERROR_ILLEGALACTIONVALUE", 110);
 define("ERROR_PARAMNOTSET", 120);
 define("ERROR_ILLEGALOPERATION", 200);
 define("ERROR_CANNOTGETIMAGE", 300);
+define("ERROR_ILLEGALPRODUCTID", 400);
 
 # set a global exception handler just in case!
 function DefaultExceptionHandler($e) {
@@ -221,6 +222,31 @@ else {
             }
             echo json_encode(array("ErrorCode" => OK, "ErrorMessage" => "",
                     "Products" => $Array));
+            break;
+
+        case "GetProductById":
+            if (!CheckPostParam("ProductId")) {
+                return;
+            }
+
+            $ProductId = intval($_POST["ProductId"]);
+
+            if (Product::ProductExists($ProductId)) {
+                $Product = (new Product($ProductId))->ArrayForSerialize();
+                $Product["ProductImages"] = GetProductImageAbsoluteUrl($ProductId);
+
+                echo json_encode([
+                    "ErrorCode" => OK,
+                    "ErrorMessage" => "",
+                    "Product" => $Product
+                ]);
+            } else {
+                echo json_encode([
+                    "ErrorCode" => ERROR_ILLEGALPRODUCTID,
+                    "ErrorMessage" => "Invalid product Id is specified"
+                ]);
+            }
+
             break;
 
         # @deprecated
